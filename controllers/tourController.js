@@ -1,3 +1,4 @@
+const { query } = require('express');
 const Tour = require('../models/tourModel');
 
 exports.validateData = (req, res, next) => {
@@ -12,7 +13,35 @@ exports.validateData = (req, res, next) => {
 
 exports.getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find({});
+    //copy all the query and delete the fields you do not want to query
+    const queryObj = { ...req.query };
+    const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    excludedFields.forEach((el) => delete queryObj[el]);
+
+    // Advanced Filtering
+    let queryString = JSON.stringify(queryObj);
+    queryString = queryString.replace(
+      /\b(gt|gte|lt|lte)\b/g,
+      (match) => `$${match}`
+    );
+    console.log(JSON.parse(queryString));
+
+    // { duration: { gte: '5' }, difficulty: 'easy' }
+
+    const query = Tour.find(JSON.parse(queryString));
+
+    //execute the query
+    const tours = await query;
+
+    // const tours = await Tour.find({ duration: 5, difficulty: 'easy' });
+
+    //we can do this too
+    // const tours = await Tour.find()
+    //   .where('duration')
+    //   .equals(5)
+    //   .where('difficulty')
+    //   .equals('easy');
+
     res.status(200).json({
       status: 'success',
       results: tours.length,
