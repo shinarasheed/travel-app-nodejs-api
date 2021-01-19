@@ -1,7 +1,7 @@
-const { query } = require('express');
 const Tour = require('../models/tourModel');
+const APIFeatures = require('../utils/apiFeatures');
 
-exports.validateData = (req, res, next) => {
+validateData = (req, res, next) => {
   if (!req.body.name || !req.body.price) {
     return res.status(400).json({
       status: 'error',
@@ -11,36 +11,24 @@ exports.validateData = (req, res, next) => {
   next();
 };
 
-exports.getAllTours = async (req, res) => {
+//this is for the alias tour
+aliasTopTours = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage,price';
+  req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
+  next();
+};
+
+getAllTours = async (req, res) => {
   try {
-    //copy all the query and delete the fields you do not want to query
-    const queryObj = { ...req.query };
-    const excludedFields = ['page', 'sort', 'limit', 'fields'];
-    excludedFields.forEach((el) => delete queryObj[el]);
-
-    // Advanced Filtering
-    let queryString = JSON.stringify(queryObj);
-    queryString = queryString.replace(
-      /\b(gt|gte|lt|lte)\b/g,
-      (match) => `$${match}`
-    );
-    console.log(JSON.parse(queryString));
-
-    // { duration: { gte: '5' }, difficulty: 'easy' }
-
-    const query = Tour.find(JSON.parse(queryString));
-
     //execute the query
-    const tours = await query;
-
-    // const tours = await Tour.find({ duration: 5, difficulty: 'easy' });
-
-    //we can do this too
-    // const tours = await Tour.find()
-    //   .where('duration')
-    //   .equals(5)
-    //   .where('difficulty')
-    //   .equals('easy');
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      // .sort()
+      // .limit()
+      .paginate();
+    // const tours = await query;
+    const tours = await features.query;
 
     res.status(200).json({
       status: 'success',
@@ -55,9 +43,9 @@ exports.getAllTours = async (req, res) => {
   }
 };
 
-exports.getTour = async (req, res) => {
+getTour = async (req, res) => {
   try {
-    const tour = Tour.findById({ _id: req.params.id });
+    const tour = await Tour.findById({ _id: req.params.id });
     res.status(200).json({
       status: 'success',
       data: {
@@ -70,7 +58,7 @@ exports.getTour = async (req, res) => {
   }
 };
 
-exports.createTour = async (req, res) => {
+createTour = async (req, res) => {
   try {
     const tour = await Tour.create(req.body);
     res.status(201).json({
@@ -85,7 +73,7 @@ exports.createTour = async (req, res) => {
   }
 };
 
-exports.updateTour = async (req, res) => {
+updateTour = async (req, res) => {
   try {
     const tour = await Tour.findByIdAndUpdate(
       { _id: req.params.id },
@@ -107,7 +95,7 @@ exports.updateTour = async (req, res) => {
   }
 };
 
-exports.deleteTour = async (req, res) => {
+deleteTour = async (req, res) => {
   try {
     await Tour.findByIdAndDelete({ _id: req.params.id });
     res.status(204).json({
@@ -118,4 +106,115 @@ exports.deleteTour = async (req, res) => {
     console.log(error.message);
     res.status(500).json({ status: 'error', message: 'server error' });
   }
+};
+
+//we can get alot of insights from our data using aggregation pipeline
+//stats for all the tours
+getToursStart = async (req, res) => {
+  try {
+    const stats = await Tour.aggregate([
+      {
+        $match: { ratingsAverage: { $gte: 4.5 } },
+      },
+
+      {
+        $group: {
+          // _id:null,
+          // _id: '$difficulty',
+          // _id: '$ratingsAverage',
+          _id: { $toUpper: '$difficulty' },
+          numTours: { $sum: 1 },
+          numRatings: { $sum: '$ratingsQuantity' },
+          avgRating: { $avg: '$ratingsAverage' },
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+
+      {
+        $sort: { avgPrice: 1 },
+      },
+
+      //we can even match multiple times
+      // {
+      //   $match: { _id: { $ne: 'EASY' } },
+      // },
+    ]);
+
+    res.status(200).json({ status: 'success', data: stats });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ status: 'error', message: 'server error' });
+  }
+};
+
+getMonthlyPlan = async (req, res) => {
+  try {
+    //get the year and convert it to a number
+    const year = req.params.year * 1;
+
+    const plan = await Tour.aggregate([
+      {
+        $unwind: '$startDates',
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: { $month: '$startDates' },
+          numToursStarts: { $sum: 1 },
+          tours: { $push: '$name' },
+        },
+      },
+
+      //add a new field, with name and the value
+
+      {
+        $addFields: { month: '$_id' },
+      },
+
+      //remove
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+
+      //sort
+      {
+        $sort: { numToursStarts: -1 },
+      },
+
+      //limit
+      {
+        $limit: 12,
+      },
+    ]);
+    // Hence, July is the busiest month
+
+    res.status(200).json({ status: 'success', count: plan.length, data: plan });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ status: 'error', message: 'server error' });
+  }
+};
+
+module.exports = {
+  validateData,
+  aliasTopTours,
+  getAllTours,
+  getTour,
+  createTour,
+  updateTour,
+  deleteTour,
+  getToursStart,
+  getMonthlyPlan,
 };
