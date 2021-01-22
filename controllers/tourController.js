@@ -1,5 +1,6 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
+const catchAsync = require('../utils/catchAsync');
 
 validateData = (req, res, next) => {
   if (!req.body.name || !req.body.price) {
@@ -58,20 +59,15 @@ getTour = async (req, res) => {
   }
 };
 
-createTour = async (req, res) => {
-  try {
-    const tour = await Tour.create(req.body);
-    res.status(201).json({
-      status: 'success',
-      data: {
-        tour,
-      },
-    });
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ status: 'error', message: 'server error' });
-  }
-};
+createTour = catchAsync(async (req, res, next) => {
+  const tour = await Tour.create(req.body);
+  res.status(201).json({
+    status: 'success',
+    data: {
+      tour,
+    },
+  });
+});
 
 updateTour = async (req, res) => {
   try {
