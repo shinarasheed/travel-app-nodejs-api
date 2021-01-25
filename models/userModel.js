@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -21,11 +22,28 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Please provide a password'],
     minlength: 8,
   },
-  comfirmPassword: {
+  confirmPassword: {
     type: String,
     required: [true, 'Please confirm password'],
     minlength: 8,
+    validate: {
+      //this only happens on save() and on create() meaning we cannot expect this to happen when we use findOneAndUpdate. its then best to use save() for update
+      validator: function (el) {
+        return el === this.password;
+      },
+      message: 'Passwords are not thesame',
+    },
   },
+});
+
+userSchema.pre('save', async function (next) {
+  //we only want to hash the password if it is been modified
+  //like during signup and password reset and password change
+  //but we do not want to hash when user in updating other info
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  this.confirmPassword = undefined;
+  next();
 });
 
 const User = mongoose.model('User', userSchema);
