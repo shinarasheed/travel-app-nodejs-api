@@ -1,24 +1,23 @@
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
-const signToken = require('../utils/generateToken');
+const { signToken, createAndSendToken } = require('../utils/generateToken');
 const AppError = require('../utils/appError');
 const sendEmail = require('../utils/email');
 const crypto = require('crypto');
 
 signup = catchAsync(async (req, res) => {
-  //anyone can register as an admin if we do below method
-  // const newUser = await User.create(req.body); bad for security
-  const newUser = await User.create({
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-    confirmPassword: req.body.confirmPassword,
-    role: req.body.role,
-  });
+  //WE INITIALLY SAID THIS HAVE SECURITY ISSUES
+  const newUser = await User.create(req.body);
 
-  const token = signToken(newUser._id);
-
-  res.status(201).json({ status: 'success', token, data: { user: newUser } });
+  //WHEN AND WHY DID WE REMOVE THIS LINE
+  // const newUser = await User.create({
+  //   name: req.body.name,
+  //   email: req.body.email,
+  //   password: req.body.password,
+  //   confirmPassword: req.body.confirmPassword,
+  //   role: req.body.role,
+  // });
+  createAndSendToken(newUser, 201, res);
 });
 
 login = catchAsync(async (req, res, next) => {
@@ -35,8 +34,7 @@ login = catchAsync(async (req, res, next) => {
   if (!user || !isMatch) {
     return next(new AppError('Incorrect email or password', 401));
   }
-  const token = signToken(user._id);
-  res.status(201).json({ status: 'success', token });
+  createAndSendToken(user, 200, res);
 });
 
 forgotPassword = catchAsync(async (req, res, next) => {
@@ -104,8 +102,31 @@ resetPassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   //log the user in and send JWT
-  const token = signToken(user._id);
-  res.status(201).json({ status: 'success', token });
+  createAndSendToken(user, 200, res);
 });
 
-module.exports = { signup, login, forgotPassword, resetPassword };
+updatePassword = catchAsync(async (req, res, next) => {
+  const { password, newPassword, confirmPassword } = req.body;
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return next(new AppError('User not found', 404));
+  }
+  //compare the passwords
+  const isMatch = await user.comparePassword(password, user.password);
+  if (!isMatch) {
+    return next(new AppError('password do not match existing password', 400));
+  }
+
+  user.password = newPassword;
+  user.confirmPassword = confirmPassword;
+  await user.save();
+  createAndSendToken(user, 201, res);
+});
+
+module.exports = {
+  signup,
+  login,
+  forgotPassword,
+  resetPassword,
+  updatePassword,
+};

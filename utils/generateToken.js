@@ -6,4 +6,12 @@ const signToken = (userId) => {
   });
 };
 
-module.exports = signToken;
+const createAndSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  res.status(statusCode).json({ status: 'success', token, data: { user } });
+};
+
+module.exports = {
+  signToken,
+  createAndSendToken,
+};
