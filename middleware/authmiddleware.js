@@ -3,7 +3,9 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
-protect = catchAsync(async (req, res, next) => {
+
+// authentication middleware
+authenticate = catchAsync(async (req, res, next) => {
   let token;
   if (
     req.headers.authorization &&
@@ -40,4 +42,20 @@ protect = catchAsync(async (req, res, next) => {
   next();
 });
 
-module.exports = protect;
+//authorization middleware
+restrictTo = (...roles) => {
+  return (req, res, next) => {
+    //...roles is the array of roles
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('you do not have permission perform this action', 403)
+      );
+    }
+    next();
+  };
+};
+
+module.exports = {
+  authenticate,
+  restrictTo,
+};
