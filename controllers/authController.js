@@ -17,6 +17,8 @@ signup = catchAsync(async (req, res) => {
   //   confirmPassword: req.body.confirmPassword,
   //   role: req.body.role,
   // });
+
+  //saving token to localStorage is very dangerous
   createAndSendToken(newUser, 201, res);
 });
 
