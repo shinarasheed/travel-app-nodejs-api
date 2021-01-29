@@ -76,8 +76,6 @@ const tourSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now,
-      //this will not allow the createdAt field to be return
-      //we should do this for fields like password
       select: false,
     },
     startDates: [Date],
@@ -86,6 +84,32 @@ const tourSchema = new mongoose.Schema(
       default: false,
       select: false,
     },
+    startLocation: {
+      //GeoJSON Data
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+
+    locations: [
+      //all the Locations are GeoJSON objects
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point'],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
   },
   {
     toJSON: { virtuals: true },
