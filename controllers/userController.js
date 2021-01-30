@@ -58,10 +58,17 @@ updateUser = factory.updateOne(User);
 //this will delete the user from the database.//this is an admin function
 deleteUser = factory.deleteOne(User);
 getUser = factory.getOne(User);
+//this is actually a middleware function that allows
+//us get the currently logged in user using the getOne factory function
+getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
+};
 
 module.exports = {
   getAllUsers,
   updateMe,
+  getMe,
   getUser,
   createUser,
   updateUser,
