@@ -1,7 +1,7 @@
 const express = require('express');
 const userController = require('../controllers/userController');
 const authController = require('../controllers/authController');
-const { authenticate } = require('../middleware/authMiddleware');
+const { authenticate, restrictTo } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -24,6 +24,6 @@ router
   .route('/:id')
   .get(userController.getUser)
   .patch(userController.updateUser)
-  .delete(userController.deleteUser);
+  .delete(authenticate, restrictTo('admin'), userController.deleteUser);
 
 module.exports = router;

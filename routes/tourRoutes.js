@@ -1,9 +1,12 @@
 const express = require('express');
 const tourController = require('../controllers/tourController');
-const reviewController = require('../controllers/reviewController');
 const { authenticate, restrictTo } = require('../middleware/authMiddleware');
+const reviewRouter = require('../routes/reviewRoutes');
 
 const router = express.Router();
+
+//when you hit this route reroute to the review router
+router.use('/:tourId/reviews', reviewRouter);
 
 router
   .route('/top-5-cheap-tours')
@@ -25,10 +28,5 @@ router
     restrictTo('admin', 'lead-guide'),
     tourController.deleteTour
   );
-
-//REVIEWS. THIS IS THE PATTERN FOR NESTED ROUTES
-router
-  .route('/:tourId/reviews')
-  .post(authenticate, restrictTo('user'), reviewController.createReview);
 
 module.exports = router;

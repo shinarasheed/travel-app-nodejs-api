@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const factory = require('../controllers/handlerFactory');
 
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -43,6 +44,7 @@ updateMe = catchAsync(async (req, res, next) => {
 });
 
 //this wont delete the user from the database
+//this is a user function
 deleteMe = catchAsync(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user.id, { active: false });
   res.status(204).json({ status: 'success', data: null });
@@ -51,7 +53,10 @@ deleteMe = catchAsync(async (req, res, next) => {
 getUser = (req, res) => {};
 createUser = (req, res) => {};
 updateUser = (req, res) => {};
-deleteUser = (req, res) => {};
+
+//this will delete the user from the database
+//this is an admin function
+deleteUser = factory.deleteOne(User);
 
 module.exports = {
   getAllUsers,

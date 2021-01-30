@@ -2,6 +2,7 @@ const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const factory = require('../controllers/handlerFactory');
 
 validateData = (req, res, next) => {
   if (!req.body.name || !req.body.price) {
@@ -80,16 +81,8 @@ updateTour = catchAsync(async (req, res, next) => {
   });
 });
 
-deleteTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findOneAndDelete({ _id: req.params.id });
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-  res.status(204).json({
-    status: 'success',
-    message: 'tour deleted',
-  });
-});
+//this is so awesome
+deleteTour = factory.deleteOne(Tour);
 
 //AGGREATION CREATES A NEW DOCUMENT FROM EXISTING DOCUMENTS BASED ON STAGES IN THE AGGREGATION PIPELINE
 //we can get alot of insights from our data using aggregation pipeline

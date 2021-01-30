@@ -2,11 +2,14 @@ const express = require('express');
 const reviewController = require('../controllers/reviewController');
 const { authenticate, restrictTo } = require('../middleware/authMiddleware');
 
-const router = express.Router();
+//merge params is awesome
+const router = express.Router({ mergeParams: true });
 
 router
   .route('/')
   .post(authenticate, restrictTo('user'), reviewController.createReview)
-  .get(reviewController.getAllReview);
+  .get(reviewController.getAllReviews);
+
+router.route('/:id').delete(reviewController.deleteReview);
 
 module.exports = router;
