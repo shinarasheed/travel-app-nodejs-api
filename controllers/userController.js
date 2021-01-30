@@ -21,6 +21,7 @@ getAllUsers = catchAsync(async (req, res) => {
     .json({ status: 'success', count: users.length, data: { users } });
 });
 
+//this is for users
 updateMe = catchAsync(async (req, res, next) => {
   //create error if user POST password data
   if (req.body.password || req.body.confirmPassword) {
@@ -52,7 +53,9 @@ deleteMe = catchAsync(async (req, res, next) => {
 
 getUser = (req, res) => {};
 createUser = (req, res) => {};
-updateUser = (req, res) => {};
+
+//this is only for admins
+updateUser = factory.updateOne(User);
 
 //this will delete the user from the database
 //this is an admin function

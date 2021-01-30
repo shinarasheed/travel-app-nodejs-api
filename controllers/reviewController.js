@@ -2,17 +2,16 @@ const Review = require('../models/reviewModel');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('../controllers/handlerFactory');
 
-createReview = catchAsync(async (req, res, next) => {
+//i love the middleware idea
+//this enables us to use the factory function for createReview too
+setTourUserIds = (req, res, next) => {
   if (!req.body.tour) req.body.tour = req.params.tourId;
   if (!req.body.user) req.body.user = req.user.id;
-  const newReview = await Review.create(req.body);
-  res.status(201).json({
-    status: 'success',
-    data: {
-      newReview,
-    },
-  });
-});
+
+  next();
+};
+
+createReview = factory.createOne(Review);
 
 //this implementation is actually AWESOME
 //because it can get all the reviews and all the reviews for a particular tour if there is a tourId
@@ -30,9 +29,12 @@ getAllReviews = catchAsync(async (req, res, next) => {
 });
 
 deleteReview = factory.deleteOne(Review);
+updateReview = factory.updateOne(Review);
 
 module.exports = {
   createReview,
   getAllReviews,
   deleteReview,
+  updateReview,
+  setTourUserIds,
 };

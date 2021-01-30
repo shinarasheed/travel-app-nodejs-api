@@ -54,34 +54,9 @@ getTour = catchAsync(async (req, res, next) => {
   });
 });
 
-createTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.create(req.body);
-  res.status(201).json({
-    status: 'success',
-    data: {
-      tour,
-    },
-  });
-});
-
-updateTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndUpdate({ _id: req.params.id }, req.body, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour,
-    },
-  });
-});
-
-//this is so awesome
+//awesome
+createTour = factory.createOne(Tour);
+updateTour = factory.updateOne(Tour);
 deleteTour = factory.deleteOne(Tour);
 
 //AGGREATION CREATES A NEW DOCUMENT FROM EXISTING DOCUMENTS BASED ON STAGES IN THE AGGREGATION PIPELINE
