@@ -149,6 +149,17 @@ tourSchema.pre(/^find/, function (next) {
   next();
 });
 
+//using populate will cause a query which will affect performance.
+//so its best to just do it minimally
+//and its best to do it here in the model to avoid code repetition
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt',
+  });
+  next();
+});
+
 //AGGREGATION MIDDLEWARE
 //these run during aggregation pipeline
 tourSchema.pre('aggregate', function (next) {
