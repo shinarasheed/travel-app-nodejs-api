@@ -1,5 +1,6 @@
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const APIFeatures = require('../utils/apiFeatures');
 
 //this can delete one irrespective of the resource or Model/Collection
 deleteOne = (Model) =>
@@ -47,8 +48,51 @@ createOne = (Model) =>
     });
   });
 
+getOne = (Model, populateOptions) =>
+  catchAsync(async (req, res, next) => {
+    let query = Model.findById(req.params.id);
+    if (populateOptions) query = query.populate(populateOptions);
+    const doc = await query;
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404));
+    }
+    res.status(200).json({
+      status: 'success',
+      data: {
+        data: doc,
+      },
+    });
+  });
+
+//doing getAll for all the resources these way will actually put
+//all the api features(sorting, filtering, limiting, paginating)
+//into all the getAll routes even though we initially only did it for getAllTours
+getAll = (Model) =>
+  catchAsync(async (req, res, next) => {
+    //To allow for nested GET Reviews on tours
+    let filter = {};
+    if (req.params.tourId) filter = { tour: req.params.tourId };
+    const features = new APIFeatures(Model.find(), req.query)
+      .filter()
+      // .sort()
+      // .limit()
+      .paginate();
+    // const docs = await query;
+    const docs = await features.query;
+
+    res.status(200).json({
+      status: 'success',
+      results: docs.length,
+      data: {
+        data: docs,
+      },
+    });
+  });
+
 module.exports = {
   deleteOne,
   updateOne,
   createOne,
+  getOne,
+  getAll,
 };

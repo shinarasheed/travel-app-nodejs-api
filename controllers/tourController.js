@@ -1,18 +1,6 @@
 const Tour = require('../models/tourModel');
-const APIFeatures = require('../utils/apiFeatures');
 const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/appError');
 const factory = require('../controllers/handlerFactory');
-
-validateData = (req, res, next) => {
-  if (!req.body.name || !req.body.price) {
-    return res.status(400).json({
-      status: 'error',
-      message: 'name and price is required',
-    });
-  }
-  next();
-};
 
 //this is for the alias tour
 aliasTopTours = (req, res, next) => {
@@ -22,42 +10,12 @@ aliasTopTours = (req, res, next) => {
   next();
 };
 
-getAllTours = catchAsync(async (req, res, next) => {
-  //execute the query
-  const features = new APIFeatures(Tour.find(), req.query)
-    .filter()
-    // .sort()
-    // .limit()
-    .paginate();
-  // const tours = await query;
-  const tours = await features.query;
-
-  res.status(200).json({
-    status: 'success',
-    results: tours.length,
-    data: {
-      tours,
-    },
-  });
-});
-
-getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById({ _id: req.params.id }).populate('reviews');
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour,
-    },
-  });
-});
-
-//awesome
+//awesome stuffs
+getAllTours = factory.getAll(Tour);
 createTour = factory.createOne(Tour);
 updateTour = factory.updateOne(Tour);
 deleteTour = factory.deleteOne(Tour);
+getTour = factory.getOne(Tour, { path: 'reviews' });
 
 //AGGREATION CREATES A NEW DOCUMENT FROM EXISTING DOCUMENTS BASED ON STAGES IN THE AGGREGATION PIPELINE
 //we can get alot of insights from our data using aggregation pipeline
@@ -150,7 +108,6 @@ getMonthlyPlan = catchAsync(async (req, res, next) => {
 });
 
 module.exports = {
-  validateData,
   aliasTopTours,
   getAllTours,
   getTour,

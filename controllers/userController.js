@@ -14,13 +14,6 @@ const filterObj = (obj, ...allowedFields) => {
   return newObj;
 };
 
-getAllUsers = catchAsync(async (req, res) => {
-  const users = await User.find();
-  res
-    .status(200)
-    .json({ status: 'success', count: users.length, data: { users } });
-});
-
 //this is for users
 updateMe = catchAsync(async (req, res, next) => {
   //create error if user POST password data
@@ -51,15 +44,20 @@ deleteMe = catchAsync(async (req, res, next) => {
   res.status(204).json({ status: 'success', data: null });
 });
 
-getUser = (req, res) => {};
-createUser = (req, res) => {};
+createUser = (req, res) => {
+  res.status(204).json({
+    status: 'error',
+    message: 'This route is not defined! Please use /signup instead',
+  });
+};
 
+getAllUsers = factory.getAll(User);
 //this is only for admins
 updateUser = factory.updateOne(User);
 
-//this will delete the user from the database
-//this is an admin function
+//this will delete the user from the database.//this is an admin function
 deleteUser = factory.deleteOne(User);
+getUser = factory.getOne(User);
 
 module.exports = {
   getAllUsers,
