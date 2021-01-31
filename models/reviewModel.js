@@ -33,6 +33,9 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+//this is to prevent Duplicate reviews
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
+
 reviewSchema.pre(/^find/, function (next) {
   // this.populate({
   //   path: 'tour',
@@ -61,10 +64,17 @@ reviewSchema.statics.calculateAverageRating = async function (tourId) {
     },
   ]);
 
-  await Tour.findByIdAndUpdate(tourId, {
-    ratingsQuantity: stats[0].numberOfRating,
-    ratingsAverage: stats[0].averageRating,
-  });
+  if (stats.length > 0) {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: stats[0].numberOfRating,
+      ratingsAverage: stats[0].averageRating,
+    });
+  } else {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: 0,
+      ratingsAverage: 4.5,
+    });
+  }
 };
 
 //post middleware does not get access to next. which makes sense
