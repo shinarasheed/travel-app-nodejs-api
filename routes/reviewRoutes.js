@@ -5,10 +5,11 @@ const { authenticate, restrictTo } = require('../middleware/authMiddleware');
 //merge params is awesome
 const router = express.Router({ mergeParams: true });
 
+router.use(authenticate);
+
 router
   .route('/')
   .post(
-    authenticate,
     restrictTo('user'),
     reviewController.setTourUserIds,
     reviewController.createReview
@@ -17,8 +18,8 @@ router
 
 router
   .route('/:id')
-  .delete(reviewController.deleteReview)
-  .patch(reviewController.updateReview)
+  .delete(restrictTo('user', 'admin'), reviewController.deleteReview)
+  .patch(restrictTo('user', 'admin'), reviewController.updateReview)
   .get(reviewController.getReview);
 
 module.exports = router;

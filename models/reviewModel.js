@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Tour = require('./tourModel');
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -42,6 +43,34 @@ reviewSchema.pre(/^find/, function (next) {
     select: 'name photo',
   });
   next();
+});
+
+//this is called on the model
+reviewSchema.statics.calculateAverageRating = async function (tourId) {
+  const stats = await this.aggregate([
+    {
+      $match: { tour: tourId },
+    },
+
+    {
+      $group: {
+        _id: '$tour',
+        numberOfRating: { $sum: 1 },
+        averageRating: { $avg: '$rating' },
+      },
+    },
+  ]);
+
+  await Tour.findByIdAndUpdate(tourId, {
+    ratingsQuantity: stats[0].numberOfRating,
+    ratingsAverage: stats[0].averageRating,
+  });
+};
+
+//post middleware does not get access to next. which makes sense
+reviewSchema.post('save', function () {
+  //this point to document
+  this.constructor.calculateAverageRating(this.tour);
 });
 
 const Review = mongoose.model('Review', reviewSchema);

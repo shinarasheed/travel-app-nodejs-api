@@ -5,17 +5,22 @@ const { authenticate, restrictTo } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.get('/me', authenticate, userController.getMe, userController.getUser);
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
-
 router.post('/forgot-password', authController.forgotPassword);
 router.patch('/reset-password/:token', authController.resetPassword);
-//patch is mostly used for update. that's the standard
-router.patch('/update-password', authenticate, authController.updatePassword);
 
-router.patch('/updateme', authenticate, userController.updateMe);
-router.delete('/deleteme', authenticate, userController.deleteMe);
+//every route after this line are now protected
+router.use(authenticate);
+
+router.patch('/update-password', authController.updatePassword);
+
+router.get('/me', userController.getMe, userController.getUser);
+router.patch('/updateme', userController.updateMe);
+router.delete('/deleteme', userController.deleteMe);
+
+//all the routes under this line is now protected and restricted
+router.use(restrictTo('admin'));
 
 router
   .route('/')
@@ -25,6 +30,6 @@ router
   .route('/:id')
   .get(userController.getUser)
   .patch(userController.updateUser)
-  .delete(authenticate, restrictTo('admin'), userController.deleteUser);
+  .delete(userController.deleteUser);
 
 module.exports = router;

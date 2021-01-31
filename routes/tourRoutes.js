@@ -14,16 +14,33 @@ router
   .get(tourController.aliasTopTours, tourController.getAllTours);
 
 router.route('/tour-stats').get(tourController.getToursStart);
-router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
+router
+  .route('/monthly-plan/:year')
+  .get(
+    authenticate,
+    restrictTo('admin', 'lead-guide', 'guide'),
+    tourController.getMonthlyPlan
+  );
 
+// we might want to expose the api to every. including third party users
+//so we remove authenticate from getAllTours
 router
   .route('/')
-  .get(authenticate, tourController.getAllTours)
-  .post(validateData, tourController.createTour);
+  .get(tourController.getAllTours)
+  .post(
+    validateData,
+    authenticate,
+    restrictTo('admin', 'lead-guide'),
+    tourController.createTour
+  );
 router
   .route('/:id')
   .get(tourController.getTour)
-  .patch(tourController.updateTour)
+  .patch(
+    authenticate,
+    restrictTo('admin', 'lead-guide'),
+    tourController.updateTour
+  )
   .delete(
     authenticate,
     restrictTo('admin', 'lead-guide'),
